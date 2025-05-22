@@ -1,103 +1,79 @@
-import Image from "next/image";
+"use client"
+import { useState } from "react";
+import { propertyCards } from "../data/propertyCards";
+import PropertyCard from "../components/PropertyCard";
+import Navbar from "../components/Navbar";
+import ThumbsUpOverlay from "../components/ThumbsUpOverlay";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [cardIndex, setCardIndex] = useState(0);
+  const [showThumbsUp, setShowThumbsUp] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const handleSwipe = () => {
+    if (cardIndex === 1) {
+      // On swipe from second to third card, show thumbs up
+      setShowThumbsUp(true);
+      setTimeout(() => {
+        setShowThumbsUp(false);
+        setCardIndex(cardIndex + 1);
+      }, 1500); // 1.5 seconds
+    } else if (cardIndex < propertyCards.length - 1) {
+      setCardIndex(cardIndex + 1);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-orange-50">
+      <Navbar />
+      <div className="flex flex-col items-center justify-center mt-8">
+        <div className="relative w-full max-w-3xl h-[520px]">
+          <AnimatePresence>
+            {propertyCards.slice(cardIndex, cardIndex + 1).map((card, idx) => (
+              <motion.div
+                key={card.bhk}
+                className="absolute inset-0"
+                initial={{ x: 300, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -300, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                onDragEnd={(event, info) => {
+                  if (Math.abs(info.offset.x) > 100) handleSwipe();
+                }}
+              >
+                <PropertyCard data={card} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        {/* Action Row */}
+        <div className="flex gap-8 mt-10">
+          <button className="bg-white shadow-lg rounded-full w-16 h-16 flex items-center justify-center text-gray-500 text-3xl">
+            {/* Dislike */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2v6m0-6V4m0 8h.01" />
+            </svg>
+          </button>
+          <button className="bg-white shadow-lg rounded-full w-16 h-16 flex items-center justify-center text-gray-500 text-3xl">
+            {/* Undo */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l-2-2m0 0l2-2m-2 2h7a4 4 0 100-8h-1" />
+            </svg>
+          </button>
+          <button
+            className="bg-orange-500 shadow-lg rounded-full w-16 h-16 flex items-center justify-center text-white text-3xl"
+            onClick={handleSwipe}
+          >
+            {/* Thumbs Up */}
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 9V5a3 3 0 00-3-3m6 3a2 2 0 012 2v4a2 2 0 01-2 2m-2 6v2a2 2 0 01-2 2H7a2 2 0 01-2-2v-5a2 2 0 012-2h2.586a1 1 0 01.707.293l5.414 5.414a1 1 0 010 1.414z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <ThumbsUpOverlay show={showThumbsUp} />
     </div>
   );
 }
