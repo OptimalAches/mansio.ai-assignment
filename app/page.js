@@ -83,32 +83,28 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-mo
 export default function Home() {
   const [cardIndex, setCardIndex] = useState(0);
   const [showThumbsUp, setShowThumbsUp] = useState(false);
-  const [direction, setDirection] = useState(null); // "left" or "right" or null
+  const [exiting, setExiting] = useState(false); // trigger card exit
+  const [exitDir, setExitDir] = useState(null); // "left" or "right" or null
 
+  // For tilt effect
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 0, 300], [-18, 0, 18]);
-  const prevCardIndex = useRef(cardIndex);
 
-  // Reset card position after swipe to new card
-  useEffect(() => {
-    if (prevCardIndex.current !== cardIndex) {
-      x.set(0);
-      prevCardIndex.current = cardIndex;
-    }
-  }, [cardIndex, x]);
-
+  // Card swipe (tilt and fly out, then increment index)
   function handleDragEnd(_, info) {
-    if (Math.abs(info.offset.x) > 80 && cardIndex < 2) {
-      setDirection(info.offset.x < 0 ? "left" : "right");
+    if (Math.abs(info.offset.x) > 80 && cardIndex < 2 && !exiting) {
+      setExitDir(info.offset.x < 0 ? "left" : "right");
+      setExiting(true);
     }
   }
 
-  // When card finishes exit animation, change card
-  function handleCardExitComplete() {
-    if (direction && cardIndex < 2) {
+  // After exit animation, increment index and reset state
+  function handleExitComplete() {
+    if (exiting) {
       const newIndex = cardIndex + 1;
       setCardIndex(newIndex);
-      setDirection(null);
+      setExitDir(null);
+      setExiting(false);
       if (newIndex === 2) {
         setShowThumbsUp(true);
         setTimeout(() => setShowThumbsUp(false), 1500);
@@ -116,20 +112,26 @@ export default function Home() {
     }
   }
 
-  // Animation logic
-  const exitX = direction === "left" ? -600 : direction === "right" ? 600 : 0;
-  const exitRotate = direction === "left" ? -30 : direction === "right" ? 30 : 0;
+  // Exit animation values
+  const exitX = exitDir === "left" ? -600 : exitDir === "right" ? 600 : 0;
+  const exitRotate = exitDir === "left" ? -30 : exitDir === "right" ? 30 : 0;
+
+  // Reset motion value when card changes
+  useEffect(() => {
+    x.set(0);
+  }, [cardIndex, x]);
 
   return (
     <div className="min-h-screen bg-[#FFF7F3] flex flex-col items-center overflow-hidden">
       <Navbar />
       <div className="h-8" />
 
+      {/* Card area */}
       <div className="flex-1 flex flex-col items-center justify-center w-full relative" style={{ minHeight: 430 }}>
-        <AnimatePresence initial={false} onExitComplete={handleCardExitComplete}>
+        <AnimatePresence initial={false} onExitComplete={handleExitComplete}>
           <motion.div
-            key={cardIndex}
-            drag={cardIndex < 2 && !direction ? "x" : false}
+            key={cardIndex + (exiting ? "-exit" : "")} // force remount on exit
+            drag={cardIndex < 2 && !exiting ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
             initial={{ opacity: 0, rotate: 0, x: 0 }}
@@ -138,14 +140,14 @@ export default function Home() {
               opacity: 0,
               x: exitX,
               rotate: exitRotate,
-              transition: { duration: 0.35 }
+              transition: { duration: 0.33, ease: "easeIn" }
             }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="flex flex-col items-center w-full absolute left-0 top-0"
-            style={{ x, rotate, touchAction: "pan-y" }}
+            style={{ x: exiting ? undefined : x, rotate: exiting ? undefined : rotate, touchAction: "pan-y" }}
           >
             <PropertyCard data={propertyCards[cardIndex]} />
-            {/* Button row, purely visual */}
+            {/* Button row */}
             <div className="flex gap-14 mt-[-34px] mb-8 z-30 justify-center w-full pointer-events-none select-none">
               <button className="bg-black shadow-xl rounded-full w-16 h-16 flex items-center justify-center text-white text-3xl border border-gray-300" tabIndex={-1}>
                 <ThumbsDown size={36} fill="white" stroke="white" />
@@ -160,7 +162,9 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
       </div>
+      {/* Thumbs overlay for third card */}
       <ThumbsUpOverlay show={showThumbsUp} />
     </div>
   );
 }
+
