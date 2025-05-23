@@ -5,11 +5,14 @@ import ThumbsUpOverlay from "@/components/ThumbsUpOverlay";
 import { propertyCards } from "@/data/propertyCards";
 import { ThumbsDown, Undo2, ThumbsUp } from "lucide-react";
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 
 export default function Home() {
   const [cardIndex, setCardIndex] = useState(0);
   const [showThumbsUp, setShowThumbsUp] = useState(false);
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-300, 0, 300], [-18, 0, 18]); 
+
 
   // Only allow two swipes (to show 3 cards)
   function handleDragEnd(_, info) {
@@ -37,12 +40,12 @@ export default function Home() {
             drag={cardIndex < 2 ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
+            initial={{ opacity: 0, rotate: 0 }}
+            animate={{ opacity: 1, rotate: 0 }}
+            exit={{ opacity: 0, rotate: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="flex flex-col items-center w-full"
-            style={{ touchAction: "pan-y" }}
+            style={{ x, rotate, touchAction: "pan-y" }}
           >
             <PropertyCard data={propertyCards[cardIndex]} />
 
@@ -67,4 +70,3 @@ export default function Home() {
     </div>
   );
 }
-
