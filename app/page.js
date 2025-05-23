@@ -83,8 +83,8 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-mo
 export default function Home() {
   const [cardIndex, setCardIndex] = useState(0);
   const [showThumbsUp, setShowThumbsUp] = useState(false);
+  const [direction, setDirection] = useState(null); // "left" or "right" or null
 
-  // For tilt effect on swipe
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-300, 0, 300], [-18, 0, 18]);
   const prevCardIndex = useRef(cardIndex);
@@ -99,8 +99,16 @@ export default function Home() {
 
   function handleDragEnd(_, info) {
     if (Math.abs(info.offset.x) > 80 && cardIndex < 2) {
+      setDirection(info.offset.x < 0 ? "left" : "right");
+    }
+  }
+
+  // When card finishes exit animation, change card
+  function handleCardExitComplete() {
+    if (direction && cardIndex < 2) {
       const newIndex = cardIndex + 1;
       setCardIndex(newIndex);
+      setDirection(null);
       if (newIndex === 2) {
         setShowThumbsUp(true);
         setTimeout(() => setShowThumbsUp(false), 1500);
@@ -108,22 +116,30 @@ export default function Home() {
     }
   }
 
+  // Animation logic
+  const exitX = direction === "left" ? -600 : direction === "right" ? 600 : 0;
+  const exitRotate = direction === "left" ? -30 : direction === "right" ? 30 : 0;
+
   return (
     <div className="min-h-screen bg-[#FFF7F3] flex flex-col items-center overflow-hidden">
       <Navbar />
       <div className="h-8" />
 
-      {/* Card and button row, swipe/tilt enabled, NO stacking */}
       <div className="flex-1 flex flex-col items-center justify-center w-full relative" style={{ minHeight: 430 }}>
-        <AnimatePresence initial={false}>
+        <AnimatePresence initial={false} onExitComplete={handleCardExitComplete}>
           <motion.div
             key={cardIndex}
-            drag={cardIndex < 2 ? "x" : false}
+            drag={cardIndex < 2 && !direction ? "x" : false}
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={handleDragEnd}
-            initial={{ opacity: 0, rotate: 0 }}
-            animate={{ opacity: 1, rotate: 0 }}
-            exit={{ opacity: 0, rotate: 0 }}
+            initial={{ opacity: 0, rotate: 0, x: 0 }}
+            animate={{ opacity: 1, rotate: 0, x: 0 }}
+            exit={{
+              opacity: 0,
+              x: exitX,
+              rotate: exitRotate,
+              transition: { duration: 0.35 }
+            }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="flex flex-col items-center w-full absolute left-0 top-0"
             style={{ x, rotate, touchAction: "pan-y" }}
@@ -144,8 +160,6 @@ export default function Home() {
           </motion.div>
         </AnimatePresence>
       </div>
-
-      {/* Thumbs up overlay (appears with card 3) */}
       <ThumbsUpOverlay show={showThumbsUp} />
     </div>
   );
