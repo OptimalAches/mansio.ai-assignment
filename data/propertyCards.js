@@ -1,7 +1,7 @@
 export const propertyCards = [
   {
     bhk: "3BHK",
-    image: "/property.jpg", // Place your local image or external URL
+    image: "/property.jpg",
     address: "BM Mystic Greens, Sector 2, HSR Layout, Bangalore",
     type: "3 BHK",
     roomType: "Private",
@@ -48,4 +48,3 @@ export const propertyCards = [
     flatmates: 1
   }
 ];
-
